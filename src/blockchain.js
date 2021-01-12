@@ -75,25 +75,29 @@ class Blockchain {
 
             try {
                 
-                if (height >= 0){
-                    block.height = height + 1;            
-                    let previousBlock = self.chain[self.height];
-                    block.previousBlockHash = previousBlock.hash;
-                    block.hash = SHA256(JSON.stringify(block)).toString();
-                    self.chain.push(block);
-                    self.height = self.chain.length -1;
-                    resolve(block);
-                
-                }else{
-                    block.height = height + 1;                        
-                    block.hash = SHA256(JSON.stringify(block)).toString();
-                    self.chain.push(block);
-                    self.height = self.chain.length -1;
-                    resolve(block);
+                if(isChainValid){
+
+                    if (height >= 0){
+                        block.height = height + 1;            
+                        let previousBlock = self.chain[self.height];
+                        block.previousBlockHash = previousBlock.hash;
+                        block.hash = SHA256(JSON.stringify(block)).toString();
+                        self.chain.push(block);
+                        self.height = self.chain.length -1;
+                        resolve(block);
+                    
+                    }else{
+                        block.height = height + 1;                        
+                        block.hash = SHA256(JSON.stringify(block)).toString();
+                        self.chain.push(block);
+                        self.height = self.chain.length -1;
+                        resolve(block);
+                    }
                 }
-            } catch (error) {
-                reject(new Error(error));
-            }
+                } catch (error) {
+                    reject(new Error(error));
+                }
+            
 
            
             
