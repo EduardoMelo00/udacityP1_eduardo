@@ -77,6 +77,7 @@ class Blockchain {
                 
                 if(isChainValid){
 
+                
                     if (height >= 0){
                         block.height = height + 1;            
                         let previousBlock = self.chain[self.height];
