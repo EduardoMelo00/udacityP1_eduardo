@@ -75,7 +75,7 @@ class Blockchain {
 
             try {
                 
-                if(isChainValid){
+               if(isChainValid){
 
                 
                     if (height >= 0){
@@ -94,6 +94,8 @@ class Blockchain {
                         self.height = self.chain.length -1;
                         resolve(block);
                     }
+                    console.log('tamanho');
+                    console.log(block.height);
                 }
                 } catch (error) {
                     reject(new Error(error));
@@ -144,6 +146,8 @@ class Blockchain {
         let self = this;
         return new Promise(async (resolve, reject) => {
             
+            let isChainValid = await self.validateChain();
+
 
             let timeMessage = parseInt(message.split(':')[1]);
 
@@ -155,9 +159,13 @@ class Blockchain {
 
             if((timeMessage + (5*60*1000)) >= currentTime){
                 if(isValidBtcMsg){
-                    let block = new BlockClass.Block({data: {"star":star, "owner":address} });  
-                    await this._addBlock(block);
-                    resolve(block);
+                    if(isChainValid){
+                    let block = new BlockClass.Block({"owner":address, "star":star});  
+                    
+                  let blockAdded =   await this._addBlock(block);
+                   
+                    resolve(blockAdded);
+                    }
                 }else{
                     reject("Signature is invalid");
                 }
@@ -216,7 +224,7 @@ class Blockchain {
         let stars = [];
         return new Promise((resolve, reject) => {
             
-                self.chain.forEach((b) => {
+                self.chain.forEach(async(b) => {
                     let data = b.getBData();
                     if(data){
                          
@@ -240,38 +248,18 @@ class Blockchain {
         let self = this;
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
-
-            let promissesArr = [];
-            let chainIndex = 0;
-
-            self.chain.forEach(b => {
-                promissesArr.push(b.validate());
-                if(b.height > 0){
-                    let prevHash = b.previousBlockHash;
-                    let blockHash = this.chain[chainIndex - 1].hash;
-
-                if(blockHash != prevHash){
-                    errorLog.push(`Error - Block Height: ${b.height} - Previous hash don't match`);
+            await Promise.all(self.chain.map(async currentItem => {
+                if(currentItem.height === 0) {
+                    await currentItem.validate() ? true : errorLog.push("Genesis block does not validate");
+                } else {
+                    await currentItem.validate() ? true : errorLog.push(`Block ${currentItem.height} hash does not validate`);
+                    currentItem.previousBlockHash === self.chain[currentItem.height-1].hash ? true : errorLog.push(`Block ${currentItem.height} previous hash does not validate`);
                 }
-
-                }
-
-                chainIndex++;
-            }); 
-            Promise.all(promissesArr).then((results) => {
-                chainIndex=0;
-                results.forEach(valid => {
-                    if(!valid){
-                        errorLog.push(`Error - Block Height : ${self.chain[chainIndex].height}-has been tampered`);
-                    }
-                    chainIndex++;
-                });
-                resolve(errorLog);
-            }).catch((err) => {console.log(err); reject(err)});
+            }));
+            resolve(errorLog);
         });
 
-    }
-
+}
 }
 
 module.exports.Blockchain = Blockchain;   
